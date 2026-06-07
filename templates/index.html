@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}Главная - Хакатон{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h1 class="display-4">Добро пожаловать в приложение Хакатона!</h1>
+        <p class="lead">Это универсальный шаблон демонстрирует основные функции Flask.</p>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Карточка товаров -->
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">📦 Товары</h5>
+                <p class="card-text">
+                    <strong class="display-6">{{ products_count }}</strong>
+                    <br>
+                    <small class="text-muted">товаров в системе</small>
+                </p>
+                <a href="{{ url_for('products') }}" class="btn btn-primary btn-sm">Перейти</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Карточка заказов -->
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">🛒 Заказы</h5>
+                <p class="card-text">
+                    <strong class="display-6">{{ orders_count }}</strong>
+                    <br>
+                    <small class="text-muted">активных заказов</small>
+                </p>
+                <a href="{{ url_for('orders') }}" class="btn btn-success btn-sm">Перейти</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Карточка дохода -->
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">💰 Доход</h5>
+                <p class="card-text">
+                    <strong class="display-6">{{ "%.2f"|format(total_revenue) }}</strong>
+                    <br>
+                    <small class="text-muted">руб. всего</small>
+                </p>
+                <a href="{{ url_for('statistics') }}" class="btn btn-info btn-sm">Статистика</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Дополнительная информация -->
+<div class="row mt-5">
+    <div class="col-md-12">
+        <div class="alert alert-info" role="alert">
+            <h4 class="alert-heading">ℹ️ Возможности приложения:</h4>
+            <ul class="mb-0">
+                <li>✅ Работа с базой данных SQLite</li>
+                <li>✅ CRUD операции (Create, Read, Update, Delete)</li>
+                <li>✅ HTML-шаблоны и рендеринг</li>
+                <li>✅ HTML-формы и обработка данных</li>
+                <li>✅ Экспорт в CSV и JSON</li>
+                <li>✅ Генерация графиков matplotlib</li>
+                <li>✅ REST API endpoints</li>
+                <li>✅ Оформление Bootstrap</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

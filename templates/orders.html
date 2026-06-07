@@ -1,0 +1,13 @@
+﻿{% extends "base.html" %}
+{% block title %}Заказы - Хакатон{% endblock %}
+{% block content %}
+<h1>🛒 Заказы</h1>
+{% if orders %}
+<table class="table table-striped"><thead><tr><th>ID</th><th>Покупатель</th><th>Товар</th><th>Сумма</th></tr></thead><tbody>
+{% for order in orders %}
+<tr><td>#{{ order.id }}</td><td>{{ order.customer_name }}</td><td>{{ order.product.name }}</td><td>{{ "%.2f"|format(order.total_price) }} ₽</td></tr>
+{% endfor %}
+</tbody></table>
+{% endif %}
+<button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addOrderModal">➕ Новый заказ</button>
+{% endblock %}

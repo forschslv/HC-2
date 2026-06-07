@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}Товары - Хакатон{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1>📦 Товары</h1>
+        <p class="text-muted">Всего товаров: <strong>{{ total_products }}</strong></p>
+    </div>
+    <div class="col-md-4 text-end">
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addProductModal">
+            ➕ Добавить товар
+        </button>
+    </div>
+</div>
+
+<!-- Таблица товаров -->
+{% if products %}
+<div class="table-responsive">
+    <table class="table table-striped table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>ID</th>
+                <th>Название</th>
+                <th>Описание</th>
+                <th>Цена</th>
+                <th>Кол-во</th>
+                <th>Действие</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for product in products %}
+            <tr>
+                <td>{{ product.id }}</td>
+                <td><strong>{{ product.name }}</strong></td>
+                <td>
+                    {% if product.description %}
+                        {{ product.description[:50] }}{% if product.description|length > 50 %}...{% endif %}
+                    {% else %}
+                        <em class="text-muted">нет описания</em>
+                    {% endif %}
+                </td>
+                <td><span class="badge bg-success">{{ "%.2f"|format(product.price) }} ₽</span></td>
+                <td>
+                    {% if product.quantity > 0 %}
+                        <span class="badge bg-info">{{ product.quantity }}</span>
+                    {% else %}
+                        <span class="badge bg-danger">Нет в наличии</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{{ url_for('product_detail', product_id=product.id) }}" class="btn btn-sm btn-info">
+                        Подробнее
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="alert alert-warning" role="alert">
+    ⚠️ Товары не найдены. <a href="#" data-bs-toggle="modal" data-bs-target="#addProductModal">Добавить первый товар</a>
+</div>
+{% endif %}
+
+<!-- Модальное окно для добавления товара -->
+<div class="modal fade" id="addProductModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Добавить новый товар</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('products') }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Название товара *</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Описание</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="price" class="form-label">Цена (₽) *</label>
+                        <input type="number" class="form-control" id="price" name="price" step="0.01" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="quantity" class="form-label">Количество</label>
+                        <input type="number" class="form-control" id="quantity" name="quantity" value="0">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Добавить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
