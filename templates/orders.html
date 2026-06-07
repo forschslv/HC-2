@@ -10,4 +10,45 @@
 </tbody></table>
 {% endif %}
 <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addOrderModal">➕ Новый заказ</button>
+
+<!-- Добавлено: Модальное окно для создания нового заказа -->
+<div class="modal fade" id="addOrderModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Новый заказ</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <form method="POST" action="{{ url_for('orders') }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="customer_name" class="form-label">Имя покупателя *</label>
+                        <input type="text" class="form-control" id="customer_name" name="customer_name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="product_id" class="form-label">Товар *</label>
+                        <select class="form-select" id="product_id" name="product_id" required>
+                            {% if products %}
+                                {% for p in products %}
+                                    <option value="{{ p.id }}">{{ p.name }} — {{ "%.2f"|format(p.price) }} ₽</option>
+                                {% endfor %}
+                            {% else %}
+                                <option disabled>Нет доступных товаров</option>
+                            {% endif %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="quantity" class="form-label">Количество</label>
+                        <input type="number" class="form-control" id="quantity" name="quantity" value="1" min="1">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Создать заказ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
