@@ -3,7 +3,7 @@
 Демонстрирует основные возможности: маршруты, работу с БД, формы, JSON, CSV, графики
 """
 
-from flask import Flask, render_template, request, redirect, url_for, jsonify
+from flask import Flask, render_template, request, redirect, url_for, jsonify, session, flash, abort, g
 from flask_sqlalchemy import SQLAlchemy
 import json
 import csv
@@ -11,6 +11,8 @@ import os
 from datetime import datetime
 import matplotlib.pyplot as plt
 import matplotlib
+from werkzeug.security import generate_password_hash, check_password_hash
+from functools import wraps
 matplotlib.use('Agg')  # Используем backend без GUI
 
 # Инициализация приложения
@@ -65,6 +67,68 @@ class Order(db.Model):
             'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S')
         }
 
+# Новая модель User с ролью
+class User(db.Model):
+    """Модель для пользователей с ролями: buyer, seller, admin"""
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    password_hash = db.Column(db.String(128), nullable=False)
+    role = db.Column(db.String(20), nullable=False, default='buyer')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'username': self.username,
+            'role': self.role,
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S')
+        }
+
+# ==================== АУТЕНТИФИКАЦИЯ / РОЛИ ====================
+# Контекст: доступны current_user и current_role в шаблонах
+@app.context_processor
+def inject_user():
+    user = None
+    role = None
+    username = None
+    if 'user_id' in session:
+        user = User.query.get(session.get('user_id'))
+        if user:
+            role = user.role
+            username = user.username
+    return {'current_user': user, 'current_role': role, 'current_username': username}
+
+# before_request для установки g.user (опционально)
+@app.before_request
+def load_user():
+    g.user = None
+    if 'user_id' in session:
+        g.user = User.query.get(session.get('user_id'))
+
+# Декоратор для проверки ролей
+def role_required(allowed_roles):
+    if isinstance(allowed_roles, str):
+        allowed = [allowed_roles]
+    else:
+        allowed = list(allowed_roles)
+    def decorator(f):
+        @wraps(f)
+        def wrapped(*args, **kwargs):
+            if 'user_id' not in session:
+                flash('Требуется авторизация', 'warning')
+                return redirect(url_for('login'))
+            user = User.query.get(session.get('user_id'))
+            if not user or user.role not in allowed:
+                abort(403)
+            return f(*args, **kwargs)
+        return wrapped
+    return decorator
 
 # ==================== КОНТЕКСТ ПРИЛОЖЕНИЯ ====================
 @app.shell_context_processor
@@ -93,6 +157,14 @@ def index():
 def products():
     """Страница с товарами"""
     if request.method == 'POST':
+        # Проверка прав: только продавец или админ могут добавлять товары
+        if 'user_id' not in session:
+            flash('Требуется вход для добавления товара', 'warning')
+            return redirect(url_for('login'))
+        current = User.query.get(session.get('user_id'))
+        if not current or current.role not in ['seller', 'admin']:
+            abort(403)
+
         # Обработка добавления нового товара
         name = request.form.get('name')
         description = request.form.get('description')
@@ -108,6 +180,7 @@ def products():
             )
             db.session.add(new_product)
             db.session.commit()
+            flash('Товар успешно добавлен', 'success')
             return redirect(url_for('products'))
     
     products_list = Product.query.all()
@@ -138,6 +211,14 @@ def product_detail(product_id):
 def orders():
     """Страница с заказами"""
     if request.method == 'POST':
+        # Разрешено создавать заказ покупателям и админам
+        if 'user_id' not in session:
+            flash('Требуется вход для создания заказа', 'warning')
+            return redirect(url_for('login'))
+        current = User.query.get(session.get('user_id'))
+        if not current or current.role not in ['buyer', 'admin']:
+            abort(403)
+
         # Обработка создания нового заказа
         customer_name = request.form.get('customer_name')
         product_id = request.form.get('product_id')
@@ -154,6 +235,7 @@ def orders():
             )
             db.session.add(new_order)
             db.session.commit()
+            flash('Заказ создан', 'success')
             return redirect(url_for('orders'))
     
     orders_list = Order.query.all()
@@ -270,6 +352,12 @@ def not_found(error):
 @app.errorhandler(500)
 def server_error(error):
     return render_template('error.html', error_code=500, error_message='Ошибка сервера'), 500
+
+
+# Обработчик 403
+@app.errorhandler(403)
+def forbidden(error):
+    return render_template('error.html', error_code=403, error_message='Доступ запрещён'), 403
 
 
 # ==================== ИНИЦИАЛИЗАЦИЯ ====================
