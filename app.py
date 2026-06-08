@@ -133,7 +133,7 @@ def role_required(allowed_roles):
 # ==================== КОНТЕКСТ ПРИЛОЖЕНИЯ ====================
 @app.shell_context_processor
 def make_shell_context():
-    return {'db': db, 'Product': Product, 'Order': Order}
+    return {'db': db, 'Product': Product, 'Order': Order, 'User': User}
 
 
 # ==================== МАРШРУТЫ ====================
@@ -309,6 +309,69 @@ def export_products_csv():
                 product.created_at.strftime('%Y-%m-%d %H:%M:%S')
             ])
     
+    return redirect(url_for('index'))
+
+
+# ==================== АУТЕНТИФИКАЦИЯ: register / login / logout ====================
+
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    """Маршрут для регистрации пользователей"""
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        role = request.form.get('role') or 'buyer'
+
+        if not username or not password:
+            flash('Введите имя пользователя и пароль', 'warning')
+            return redirect(url_for('register'))
+
+        # Проверка назначения роли admin: если уже есть админ, то только текущий админ может назначать
+        existing_admin = User.query.filter_by(role='admin').first()
+        if role == 'admin' and existing_admin:
+            if 'user_id' not in session:
+                flash('Только администратор может создавать аккаунт с ролью admin', 'warning')
+                return redirect(url_for('login'))
+            current = User.query.get(session.get('user_id'))
+            if not current or current.role != 'admin':
+                abort(403)
+
+        if User.query.filter_by(username=username).first():
+            flash('Пользователь с таким именем уже существует', 'warning')
+            return redirect(url_for('register'))
+
+        user = User(username=username, role=role)
+        user.set_password(password)
+        db.session.add(user)
+        db.session.commit()
+        flash('Регистрация успешна. Пожалуйста, войдите.', 'success')
+        return redirect(url_for('login'))
+
+    return render_template('register.html', page_title='Регистрация')
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    """Маршрут для входа пользователей"""
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        user = User.query.filter_by(username=username).first()
+        if not user or not user.check_password(password):
+            flash('Неверное имя пользователя или пароль', 'danger')
+            return redirect(url_for('login'))
+        session['user_id'] = user.id
+        flash(f'Добро пожаловать, {user.username}!', 'success')
+        return redirect(url_for('index'))
+    return render_template('login.html', page_title='Вход')
+
+
+@app.route('/logout')
+def logout():
+    """Маршрут для выхода пользователей"""
+    session.pop('user_id', None)
+    flash('Вы вышли из системы', 'info')
     return redirect(url_for('index'))
 
 
