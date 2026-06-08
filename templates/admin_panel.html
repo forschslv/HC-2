@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Админ панель - Хакатон{% endblock %}
+{% block content %}
+<h1>Админ панель</h1>
+<div class="row">
+    <div class="col-md-12">
+        <h3>Пользователи</h3>
+        <table class="table"><thead><tr><th>ID</th><th>Имя</th><th>Роль</th><th>Действие</th></tr></thead><tbody>
+            {% for u in users %}
+            <tr>
+                <td>{{ u.id }}</td>
+                <td>{{ u.username }}</td>
+                <td>{{ u.role }}</td>
+                <td>
+                    <form method="post" action="{{ url_for('admin_delete_user', user_id=u.id) }}" style="display:inline">
+                        <button class="btn btn-sm btn-danger" type="submit">Удалить</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody></table>
+
+        <h3>Товары</h3>
+        <table class="table"><thead><tr><th>ID</th><th>Название</th><th>Продавец</th><th>Действие</th></tr></thead><tbody>
+            {% for p in products %}
+            <tr>
+                <td>{{ p.id }}</td>
+                <td>{{ p.name }}</td>
+                <td>{% if p.seller %}{{ p.seller.username }}{% else %}-{% endif %}</td>
+                <td>
+                    <form method="post" action="{{ url_for('admin_delete_product', product_id=p.id) }}" style="display:inline">
+                        <button class="btn btn-sm btn-danger" type="submit">Удалить</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody></table>
+
+        <h3>Заказы</h3>
+        <table class="table"><thead><tr><th>ID</th><th>Покупатель</th><th>Товар</th><th>Сумма</th><th>Действие</th></tr></thead><tbody>
+            {% for o in orders %}
+            <tr>
+                <td>{{ o.id }}</td>
+                <td>{{ o.customer_name }}</td>
+                <td>{% if o.product %}{{ o.product.name }}{% else %}-{% endif %}</td>
+                <td>{{ "%.2f"|format(o.total_price) }} ₽</td>
+                <td>
+                    <form method="post" action="{{ url_for('admin_delete_order', order_id=o.id) }}" style="display:inline">
+                        <button class="btn btn-sm btn-danger" type="submit">Удалить</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody></table>
+    </div>
+</div>
+{% endblock %}
+

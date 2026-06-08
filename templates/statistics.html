@@ -1,4 +1,4 @@
-﻿{% extends "base.html" %}
+﻿﻿{% extends "base.html" %}
 {% block title %}Статистика - Хакатон{% endblock %}
 {% block content %}
 <h1>📊 Статистика</h1>
@@ -7,6 +7,12 @@
     <div class="col-md-3"><div class="card text-center"><div class="card-body"><h6>Заказов</h6><p class="display-5">{{ total_orders }}</p></div></div></div>
     <div class="col-md-3"><div class="card text-center"><div class="card-body"><h6>Сред. цена</h6><p class="display-5">{{ "%.2f"|format(avg_price) }} ₽</p></div></div></div>
     <div class="col-md-3"><div class="card text-center"><div class="card-body"><h6>Доход</h6><p class="display-5">{{ "%.2f"|format(total_revenue) }} ₽</p></div></div></div>
+</div>
+<div class="d-flex justify-content-between mb-3">
+    <div></div>
+    <div>
+        <a href="{{ url_for('export_statistics_csv') }}" class="btn btn-outline-primary">Экспорт в CSV</a>
+    </div>
 </div>
 <div class="card"><div class="card-body"><h5>📈 Диаграммы</h5><img src="{{ url_for('static', filename='charts/statistics.png') }}" alt="Статистика" class="img-fluid"></div></div>
 {% endblock %}

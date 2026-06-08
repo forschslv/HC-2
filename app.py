@@ -4,6 +4,7 @@
 """
 
 from flask import Flask, render_template, request, redirect, url_for, jsonify, session, flash, abort, g
+from flask import Response
 from flask_sqlalchemy import SQLAlchemy
 import json
 import csv
@@ -340,6 +341,85 @@ def export_products_csv():
             ])
     
     return redirect(url_for('index'))
+
+
+@app.route('/export/statistics')
+@role_required('admin')
+def export_statistics_csv():
+    """Экспорт общей статистики: сводный CSV с товарами и заказами"""
+    products_list = Product.query.all()
+    orders_list = Order.query.all()
+
+    # Сформируем CSV в памяти
+    import io
+    si = io.StringIO()
+    writer = csv.writer(si)
+
+    writer.writerow(['Статистика'])
+    writer.writerow(['Всего товаров', len(products_list)])
+    writer.writerow(['Всего заказов', len(orders_list)])
+    writer.writerow([])
+
+    writer.writerow(['Товары:'])
+    writer.writerow(['ID', 'Название', 'Описание', 'Цена', 'Количество', 'Продавец'])
+    for p in products_list:
+        writer.writerow([p.id, p.name, p.description or '', p.price, p.quantity, p.seller.username if p.seller else ''])
+
+    writer.writerow([])
+    writer.writerow(['Заказы:'])
+    writer.writerow(['ID', 'Покупатель', 'Товар ID', 'Товар', 'Кол-во', 'Сумма', 'Статус', 'Дата'])
+    for o in orders_list:
+        writer.writerow([o.id, o.customer_name, o.product_id, o.product.name if o.product else '', o.quantity, o.total_price, o.status, o.created_at.strftime('%Y-%m-%d %H:%M:%S')])
+
+    output = si.getvalue()
+    si.close()
+
+    return Response(output, mimetype='text/csv', headers={
+        'Content-Disposition': 'attachment; filename=statistics.csv'
+    })
+
+
+@app.route('/admin')
+@role_required('admin')
+def admin_panel():
+    users = User.query.all()
+    products = Product.query.all()
+    orders = Order.query.all()
+    return render_template('admin_panel.html', page_title='Админ панель', users=users, products=products, orders=orders)
+
+
+@app.route('/admin/delete_user/<int:user_id>', methods=['POST'])
+@role_required('admin')
+def admin_delete_user(user_id):
+    user = User.query.get_or_404(user_id)
+    # Не разрешаем удалять самого себя
+    if 'user_id' in session and session.get('user_id') == user_id:
+        flash('Нельзя удалить текущего админа', 'warning')
+        return redirect(url_for('admin_panel'))
+    db.session.delete(user)
+    db.session.commit()
+    flash('Пользователь удалён', 'success')
+    return redirect(url_for('admin_panel'))
+
+
+@app.route('/admin/delete_product/<int:product_id>', methods=['POST'])
+@role_required('admin')
+def admin_delete_product(product_id):
+    p = Product.query.get_or_404(product_id)
+    db.session.delete(p)
+    db.session.commit()
+    flash('Товар удалён', 'success')
+    return redirect(url_for('admin_panel'))
+
+
+@app.route('/admin/delete_order/<int:order_id>', methods=['POST'])
+@role_required('admin')
+def admin_delete_order(order_id):
+    o = Order.query.get_or_404(order_id)
+    db.session.delete(o)
+    db.session.commit()
+    flash('Заказ удалён', 'success')
+    return redirect(url_for('admin_panel'))
 
 
 # ==================== АУТЕНТИФИКАЦИЯ: register / login / logout ====================
