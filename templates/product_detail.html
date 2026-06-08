@@ -36,6 +36,9 @@
 
                 <div class="mt-4">
                     <p><strong>Дата добавления:</strong> {{ product.created_at.strftime('%d.%m.%Y %H:%M') }}</p>
+                    {% if product.seller %}
+                    <p><strong>Продавец:</strong> {{ product.seller.username }}</p>
+                    {% endif %}
                 </div>
 
                 <div class="mt-4">
@@ -76,4 +79,3 @@
     </div>
 </div>
 {% endblock %}
-

@@ -32,6 +32,11 @@ class Product(db.Model):
     price = db.Column(db.Float, nullable=False)
     quantity = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    # Продавец (user.id) - nullable, чтобы не ломать существующие записи
+    seller_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+
+    # Связь на объект User
+    seller = db.relationship('User', backref='products', foreign_keys=[seller_id])
 
     def to_dict(self):
         return {
@@ -40,7 +45,8 @@ class Product(db.Model):
             'description': self.description,
             'price': self.price,
             'quantity': self.quantity,
-            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S')
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+            'seller': {'id': self.seller.id, 'username': self.seller.username} if self.seller else None
         }
 
 
@@ -176,7 +182,8 @@ def products():
                 name=name,
                 description=description,
                 price=float(price),
-                quantity=int(quantity) if quantity else 0
+                quantity=int(quantity) if quantity else 0,
+                seller_id=current.id
             )
             db.session.add(new_product)
             db.session.commit()

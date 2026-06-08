@@ -26,6 +26,7 @@
                 <th>Описание</th>
                 <th>Цена</th>
                 <th>Кол-во</th>
+                <th>Продавец</th>
                 <th>Действие</th>
             </tr>
         </thead>
@@ -47,6 +48,13 @@
                         <span class="badge bg-info">{{ product.quantity }}</span>
                     {% else %}
                         <span class="badge bg-danger">Нет в наличии</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if product.seller %}
+                        {{ product.seller.username }}
+                    {% else %}
+                        <span class="text-muted">—</span>
                     {% endif %}
                 </td>
                 <td>
