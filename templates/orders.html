@@ -23,7 +23,12 @@
                 <div class="modal-body">
                     <div class="mb-3">
                         <label for="customer_name" class="form-label">Имя покупателя *</label>
+                        {% if current_role == 'buyer' and current_username %}
+                        <!-- Покупатель не может подменить имя: автоматически подставляем и делаем поле readonly -->
+                        <input type="text" class="form-control" id="customer_name" name="customer_name" value="{{ current_username }}" readonly>
+                        {% else %}
                         <input type="text" class="form-control" id="customer_name" name="customer_name" required>
+                        {% endif %}
                     </div>
                     <div class="mb-3">
                         <label for="product_id" class="form-label">Товар *</label>

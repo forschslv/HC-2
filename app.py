@@ -220,24 +220,47 @@ def orders():
             abort(403)
 
         # Обработка создания нового заказа
-        customer_name = request.form.get('customer_name')
+        # Если текущий пользователь - buyer, принудительно используем его username (чтобы нельзя было подменить имя)
+        if current.role == 'buyer':
+            customer_name = current.username
+        else:
+            customer_name = request.form.get('customer_name')
+
         product_id = request.form.get('product_id')
         quantity = request.form.get('quantity')
-        
-        product = Product.query.get(product_id)
-        if product and customer_name and quantity:
-            total_price = product.price * int(quantity)
-            new_order = Order(
-                customer_name=customer_name,
-                product_id=int(product_id),
-                quantity=int(quantity),
-                total_price=total_price
-            )
-            db.session.add(new_order)
-            db.session.commit()
-            flash('Заказ создан', 'success')
+
+        # Валидация
+        try:
+            pid = int(product_id)
+        except (TypeError, ValueError):
+            flash('Выберите корректный товар', 'warning')
             return redirect(url_for('orders'))
-    
+
+        try:
+            qty = int(quantity) if quantity else 1
+            if qty < 1:
+                raise ValueError()
+        except (TypeError, ValueError):
+            flash('Укажите корректное количество', 'warning')
+            return redirect(url_for('orders'))
+
+        product = Product.query.get(pid)
+        if not product:
+            flash('Товар не найден', 'warning')
+            return redirect(url_for('orders'))
+
+        total_price = product.price * qty
+        new_order = Order(
+            customer_name=customer_name,
+            product_id=pid,
+            quantity=qty,
+            total_price=total_price
+        )
+        db.session.add(new_order)
+        db.session.commit()
+        flash('Заказ создан', 'success')
+        return redirect(url_for('orders'))
+
     orders_list = Order.query.all()
     products_list = Product.query.all()
     
